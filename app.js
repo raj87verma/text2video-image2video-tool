@@ -38,19 +38,72 @@
   // ---------- Transition / VFX effect catalog ----------
   // Transitions are fully automatic: no per-slide manual picker. Every scene
   // automatically gets a DIFFERENT transition effect into the next one,
-  // cycling through this pool based on its position in the sequence — so
-  // reordering, adding, or removing scenes always keeps the sequence varied
-  // without any manual selection.
+  // cycling through this full 62-effect pool based on its position in the
+  // sequence — so reordering, adding, or removing scenes always keeps the
+  // sequence varied without any manual selection.
   const AUTO_TRANSITION_POOL = [
+    "cut",
     "fade",
-    "slide-left",
-    "slide-right",
-    "zoom-in",
-    "wipe-left",
-    "slide-up",
-    "zoom-out",
-    "wipe-right",
-    "slide-down",
+    "dissolve",
+    "wipe",
+    "slide",
+    "push",
+    "zoom",
+    "split",
+    "reveal",
+    "random-bars",
+    "blinds",
+    "box",
+    "checkerboard",
+    "diamond",
+    "fly-in",
+    "glitch",
+    "morph",
+    "page-turn",
+    "peel",
+    "ripple",
+    "spiral",
+    "swirl",
+    "vortex",
+    "wave",
+    "zoom-rotate",
+    "cube",
+    "door",
+    "flip",
+    "gallery",
+    "pan",
+    "rotate",
+    "orbit",
+    "swap",
+    "ferris-wheel",
+    "fly-through",
+    "flash",
+    "burn",
+    "color-wash",
+    "light-leak",
+    "shutter",
+    "smear",
+    "cross-zoom",
+    "linear-wipe",
+    "radial-wipe",
+    "clock-wipe",
+    "wedge",
+    "comb",
+    "shape-wipe",
+    "barn-door",
+    "iris",
+    "venetian-blinds",
+    "checker-board",
+    "dissolve-noise",
+    "fluid",
+    "melt",
+    "page-curl",
+    "ripple-radial",
+    "wave-horizontal",
+    "cube-rotate",
+    "stretch",
+    "twirl",
+    "warp",
   ];
 
   // Randomize where the cycle starts each time the app loads, so consecutive
@@ -65,16 +118,68 @@
   }
 
   const TRANSITION_LABELS = {
+    cut: "✂️ Cut",
     fade: "🌫️ Fade",
-    "slide-left": "⬅️ Slide Left",
-    "slide-right": "➡️ Slide Right",
-    "slide-up": "⬆️ Slide Up",
-    "slide-down": "⬇️ Slide Down",
-    "zoom-in": "🔍 Zoom In",
-    "zoom-out": "🔎 Zoom Out",
-    "wipe-left": "◀️ Wipe Left",
-    "wipe-right": "▶️ Wipe Right",
-    cut: "✂️ Hard Cut",
+    dissolve: "💫 Dissolve",
+    wipe: "➡️ Wipe",
+    slide: "🚪 Slide",
+    push: "👉 Push",
+    zoom: "🔍 Zoom",
+    split: "◫ Split",
+    reveal: "🌓 Reveal",
+    "random-bars": "🎞️ Random Bars",
+    blinds: "🪟 Blinds",
+    box: "🔲 Box",
+    checkerboard: "🏁 Checkerboard",
+    diamond: "🔷 Diamond",
+    "fly-in": "🛫 Fly In",
+    glitch: "📺 Glitch",
+    morph: "🌀 Morph",
+    "page-turn": "📄 Page Turn",
+    peel: "🍌 Peel",
+    ripple: "🌊 Ripple",
+    spiral: "🌪️ Spiral",
+    swirl: "🔄 Swirl",
+    vortex: "🕳️ Vortex",
+    wave: "🌊 Wave",
+    "zoom-rotate": "🔁 Zoom Rotate",
+    cube: "🧊 Cube",
+    door: "🚪 Door",
+    flip: "🔃 Flip",
+    gallery: "🖼️ Gallery",
+    pan: "🎥 Pan",
+    rotate: "🔄 Rotate",
+    orbit: "🪐 Orbit",
+    swap: "🔀 Swap",
+    "ferris-wheel": "🎡 Ferris Wheel",
+    "fly-through": "🚀 Fly Through",
+    flash: "⚡ Flash",
+    burn: "🔥 Burn",
+    "color-wash": "🎨 Color Wash",
+    "light-leak": "✨ Light Leak",
+    shutter: "🎦 Shutter",
+    smear: "🖌️ Smear",
+    "cross-zoom": "🔎 Cross Zoom",
+    "linear-wipe": "📏 Linear Wipe",
+    "radial-wipe": "☢️ Radial Wipe",
+    "clock-wipe": "🕐 Clock Wipe",
+    wedge: "🍰 Wedge",
+    comb: "🪮 Comb",
+    "shape-wipe": "🔺 Shape Wipe",
+    "barn-door": "🚪 Barn Door",
+    iris: "👁️ Iris",
+    "venetian-blinds": "🪟 Venetian Blinds",
+    "checker-board": "♟️ Checker Board",
+    "dissolve-noise": "📡 Dissolve Noise",
+    fluid: "💧 Fluid",
+    melt: "🫠 Melt",
+    "page-curl": "📃 Page Curl",
+    "ripple-radial": "🎯 Ripple Radial",
+    "wave-horizontal": "〜 Wave Horizontal",
+    "cube-rotate": "🧊 Cube Rotate",
+    stretch: "🪢 Stretch",
+    twirl: "🌀 Twirl",
+    warp: "🌌 Warp",
   };
   function transitionLabel(type) {
     return TRANSITION_LABELS[type] || type;
@@ -547,6 +652,215 @@
     }
   }
 
+  // ---------- Transition math helpers ----------
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const ease = (t) => t * t * (3 - 2 * t); // smoothstep
+
+  // Deterministic pseudo-random in [0,1) from an integer index — used so
+  // "random" looking effects (dissolve, glitch, random bars) render
+  // identically every frame instead of flickering with true randomness.
+  function hashRand(i) {
+    const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  function drawTransformed(c, canvas, w, h, scale, angle = 0, offX = 0, offY = 0, scaleY) {
+    c.save();
+    c.translate(w / 2 + offX, h / 2 + offY);
+    if (angle) c.rotate(angle);
+    c.scale(scale, scaleY === undefined ? scale : scaleY);
+    c.drawImage(canvas, -w / 2, -h / 2, w, h);
+    c.restore();
+  }
+
+  /** Simple full-frame cross zoom/rotate/fade blend, parameterized. */
+  function zoomBlend(c, canvasA, canvasB, alpha, w, h, opts = {}) {
+    const { aScaleTo = 1.2, bScaleFrom = 0.8, rotate = 0 } = opts;
+    c.save();
+    c.globalAlpha = clamp01(1 - alpha);
+    drawTransformed(c, canvasA, w, h, 1 + (aScaleTo - 1) * alpha, -rotate * alpha);
+    c.restore();
+    c.save();
+    c.globalAlpha = clamp01(alpha);
+    drawTransformed(c, canvasB, w, h, bScaleFrom + (1 - bScaleFrom) * alpha, rotate * (1 - alpha));
+    c.restore();
+  }
+
+  /** Clip-path reveal: draw A fully, then reveal B through a growing path. */
+  function shapeClipReveal(c, canvasA, canvasB, alpha, w, h, pathFn) {
+    c.drawImage(canvasA, 0, 0);
+    if (alpha <= 0) return;
+    c.save();
+    c.beginPath();
+    pathFn(c, alpha, w, h);
+    c.clip();
+    c.drawImage(canvasB, 0, 0);
+    c.restore();
+  }
+
+  /**
+   * Grid-based reveal: canvas split into a cols x rows grid; each cell
+   * reveals B once `alpha` passes a per-cell delay (from orderFn), giving
+   * checkerboard / box / diamond / random / glitch style reveals.
+   */
+  function gridReveal(c, canvasA, canvasB, alpha, w, h, cols, rows, orderFn, opts = {}) {
+    const spread = opts.spread ?? 0.6;
+    const duration = opts.duration ?? 0.5;
+    c.drawImage(canvasA, 0, 0);
+    const cellW = w / cols,
+      cellH = h / rows;
+    const orders = [];
+    let maxOrder = 0;
+    for (let r = 0; r < rows; r++) {
+      orders.push([]);
+      for (let col = 0; col < cols; col++) {
+        const o = orderFn(r, col, rows, cols);
+        orders[r].push(o);
+        if (o > maxOrder) maxOrder = o;
+      }
+    }
+    for (let r = 0; r < rows; r++) {
+      for (let col = 0; col < cols; col++) {
+        const delay = maxOrder > 0 ? (orders[r][col] / maxOrder) * spread : 0;
+        const ca = clamp01((alpha - delay) / duration);
+        if (ca <= 0) continue;
+        c.save();
+        c.beginPath();
+        c.rect(col * cellW, r * cellH, cellW + 0.5, cellH + 0.5);
+        c.clip();
+        c.globalAlpha = ca;
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+      }
+    }
+  }
+
+  /**
+   * Curtain reveal: canvas split into strips; B is drawn full underneath,
+   * then each strip of A slides away (direction/timing per strip), giving
+   * blinds / venetian blinds / shutter / comb style effects.
+   */
+  function curtainReveal(c, canvasA, canvasB, alpha, w, h, strips) {
+    c.drawImage(canvasB, 0, 0);
+    strips.forEach((s) => {
+      const duration = s.duration ?? 0.9;
+      const ca = clamp01((alpha - (s.delay || 0)) / duration);
+      if (ca >= 1) return; // strip fully slid away, B already showing beneath
+      c.save();
+      c.beginPath();
+      c.rect(s.x, s.y, s.w + 0.5, s.h + 0.5);
+      c.clip();
+      c.drawImage(canvasA, (s.dx || 0) * ca * w, (s.dy || 0) * ca * h);
+      c.restore();
+    });
+  }
+
+  function stripsRows(w, h, n, dirFn, delayFn) {
+    const sh = h / n;
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      const d = dirFn(i, n);
+      arr.push({ x: 0, y: i * sh, w, h: sh, dx: d.dx, dy: d.dy, delay: delayFn ? delayFn(i, n) : 0 });
+    }
+    return arr;
+  }
+  function stripsCols(w, h, n, dirFn, delayFn) {
+    const sw = w / n;
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      const d = dirFn(i, n);
+      arr.push({ x: i * sw, y: 0, w: sw, h, dx: d.dx, dy: d.dy, delay: delayFn ? delayFn(i, n) : 0 });
+    }
+    return arr;
+  }
+
+  /** Concentric ring rotation warp — cheap approximation of twirl/vortex/spiral. */
+  function ringRotateWarp(c, canvasA, canvasB, alpha, w, h, opts = {}) {
+    const { rings = 8, maxAngle = Math.PI / 2, shrink = 0.15, reverse = false } = opts;
+    c.drawImage(canvasA, 0, 0);
+    c.save();
+    c.globalAlpha = clamp01(alpha);
+    const cx = w / 2,
+      cy = h / 2;
+    const maxR = Math.hypot(w, h) / 2;
+    for (let i = 0; i < rings; i++) {
+      const rInner = (maxR * i) / rings;
+      const rOuter = (maxR * (i + 1)) / rings;
+      const t = i / Math.max(1, rings - 1);
+      const angle = (reverse ? -1 : 1) * maxAngle * (1 - alpha) * (1 - t * 0.5);
+      c.save();
+      c.beginPath();
+      c.arc(cx, cy, rOuter, 0, Math.PI * 2);
+      c.arc(cx, cy, rInner, 0, Math.PI * 2, true);
+      c.clip("evenodd");
+      c.translate(cx, cy);
+      c.rotate(angle);
+      const scale = 1 - shrink * (1 - alpha) * t;
+      c.scale(scale, scale);
+      c.drawImage(canvasB, -cx, -cy);
+      c.restore();
+    }
+    c.restore();
+  }
+
+  /** Concentric rings expanding outward from center, revealing B ring by ring. */
+  function rippleReveal(c, canvasA, canvasB, alpha, w, h, rings = 10, wobble = 0) {
+    c.drawImage(canvasA, 0, 0);
+    const cx = w / 2,
+      cy = h / 2;
+    const maxR = Math.hypot(w, h) / 2;
+    for (let i = 0; i < rings; i++) {
+      const rOuter = (maxR * (i + 1)) / rings;
+      const rInner = (maxR * i) / rings;
+      const threshold = i / rings + wobble * Math.sin(i * 1.3);
+      const ca = clamp01((alpha - threshold * 0.7) / 0.3);
+      if (ca <= 0) continue;
+      c.save();
+      c.beginPath();
+      c.arc(cx, cy, rOuter, 0, Math.PI * 2);
+      c.arc(cx, cy, rInner, 0, Math.PI * 2, true);
+      c.clip("evenodd");
+      c.globalAlpha = ca;
+      c.drawImage(canvasB, 0, 0);
+      c.restore();
+    }
+  }
+
+  /** Wavy-boundary linear wipe (vertical strips wiping left-to-right, or transposed). */
+  function waveWipe(c, canvasA, canvasB, alpha, w, h, horizontal = false, amplitude = 0.06, freq = 3, n = 40) {
+    c.drawImage(canvasA, 0, 0);
+    const size = horizontal ? w / n : h / n;
+    for (let i = 0; i < n; i++) {
+      const off = Math.sin((i / n) * Math.PI * 2 * freq) * amplitude;
+      const bandAlpha = clamp01(alpha + off);
+      if (bandAlpha <= 0) continue;
+      c.save();
+      c.beginPath();
+      if (horizontal) {
+        c.rect(i * size, 0, size + 0.5, bandAlpha * h);
+      } else {
+        c.rect(0, i * size, bandAlpha * w, size + 0.5);
+      }
+      c.clip();
+      c.drawImage(canvasB, 0, 0);
+      c.restore();
+    }
+  }
+
+  /** Fade through a color/gradient overlay (color-wash / light-leak / flash / burn). */
+  function colorOverlayTransition(c, canvasA, canvasB, alpha, w, h, fillFn, peak = 0.5, spread = 0.5) {
+    const showB = alpha >= 0.5;
+    c.drawImage(showB ? canvasB : canvasA, 0, 0);
+    const dist = Math.abs(alpha - peak);
+    const overlayAlpha = clamp01(1 - dist / spread);
+    if (overlayAlpha > 0) {
+      c.save();
+      c.globalAlpha = overlayAlpha;
+      fillFn(c, w, h);
+      c.restore();
+    }
+  }
+
   /**
    * Composite the outgoing slide (canvasA) and incoming slide (canvasB)
    * onto the main context `c`, according to the chosen VFX/transition type.
@@ -554,79 +868,568 @@
    */
   function compositeTransition(c, type, canvasA, canvasB, alpha, w, h) {
     switch (type) {
-      case "slide-left": {
+      // ---- Simple ----
+      case "fade": {
+        c.drawImage(canvasA, 0, 0);
+        c.save();
+        c.globalAlpha = alpha;
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+      case "dissolve": {
+        gridReveal(c, canvasA, canvasB, alpha, w, h, 10, 6, (r, col) => hashRand(r * 10 + col) * 100, {
+          spread: 0.7,
+          duration: 0.45,
+        });
+        break;
+      }
+      case "dissolve-noise": {
+        gridReveal(c, canvasA, canvasB, alpha, w, h, 18, 10, (r, col) => hashRand((r * 18 + col) * 7 + 3) * 100, {
+          spread: 0.75,
+          duration: 0.3,
+        });
+        break;
+      }
+      case "glitch": {
+        // Fine horizontal bands reveal in random order with shrinking jitter.
+        const rows = 20;
+        const rh = h / rows;
+        c.drawImage(canvasA, 0, 0);
+        for (let i = 0; i < rows; i++) {
+          const delay = hashRand(i) * 0.6;
+          const ca = clamp01((alpha - delay) / 0.2);
+          if (ca <= 0) continue;
+          const jitter = (hashRand(i * 3 + 1) - 0.5) * 24 * (1 - ca);
+          c.save();
+          c.beginPath();
+          c.rect(0, i * rh, w, rh + 0.5);
+          c.clip();
+          c.globalAlpha = ca;
+          c.drawImage(canvasB, jitter, 0);
+          c.restore();
+        }
+        break;
+      }
+
+      // ---- Wipes / shape reveals ----
+      case "wipe":
+      case "linear-wipe":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) => cc.rect(0, 0, a * ww, hh));
+        break;
+      case "split":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) =>
+          cc.rect(ww / 2 - (a * ww) / 2, 0, a * ww, hh)
+        );
+        break;
+      case "reveal":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) =>
+          cc.rect(ww / 2 - (a * ww) / 2, hh / 2 - (a * hh) / 2, a * ww, a * hh)
+        );
+        break;
+      case "iris":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) =>
+          cc.arc(ww / 2, hh / 2, a * (Math.hypot(ww, hh) / 2), 0, Math.PI * 2)
+        );
+        break;
+      case "radial-wipe":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) =>
+          cc.arc(0, 0, a * Math.hypot(ww, hh), 0, Math.PI * 2)
+        );
+        break;
+      case "clock-wipe":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) => {
+          const cx = ww / 2,
+            cy = hh / 2,
+            r = Math.hypot(ww, hh);
+          cc.moveTo(cx, cy);
+          cc.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + a * Math.PI * 2);
+          cc.closePath();
+        });
+        break;
+      case "wedge":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) => {
+          const cx = ww / 2,
+            cy = hh / 2,
+            r = Math.hypot(ww, hh);
+          cc.moveTo(cx, cy);
+          cc.arc(cx, cy, r, Math.PI, Math.PI + a * Math.PI * 2);
+          cc.closePath();
+        });
+        break;
+      case "shape-wipe":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) => {
+          const cx = ww / 2,
+            cy = hh / 2;
+          const r = a * (Math.hypot(ww, hh) / 2);
+          const points = 6;
+          for (let i = 0; i <= points; i++) {
+            const ang = (i / points) * Math.PI * 2 - Math.PI / 2;
+            const rr = i % 2 === 0 ? r : r * 0.55;
+            const x = cx + Math.cos(ang) * rr;
+            const y = cy + Math.sin(ang) * rr;
+            i === 0 ? cc.moveTo(x, y) : cc.lineTo(x, y);
+          }
+          cc.closePath();
+        });
+        break;
+      case "diamond":
+        shapeClipReveal(c, canvasA, canvasB, alpha, w, h, (cc, a, ww, hh) => {
+          const cx = ww / 2,
+            cy = hh / 2;
+          const r = a * (Math.hypot(ww, hh) / 2);
+          cc.moveTo(cx, cy - r);
+          cc.lineTo(cx + r, cy);
+          cc.lineTo(cx, cy + r);
+          cc.lineTo(cx - r, cy);
+          cc.closePath();
+        });
+        break;
+      case "barn-door": {
+        c.drawImage(canvasB, 0, 0);
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, w / 2, h);
+        c.clip();
+        c.drawImage(canvasA, -alpha * (w / 2), 0);
+        c.restore();
+        c.save();
+        c.beginPath();
+        c.rect(w / 2, 0, w / 2, h);
+        c.clip();
+        c.drawImage(canvasA, alpha * (w / 2), 0);
+        c.restore();
+        break;
+      }
+
+      // ---- Grid reveals ----
+      case "checkerboard":
+        gridReveal(c, canvasA, canvasB, alpha, w, h, 8, 6, (r, col) => (r + col) % 2, { spread: 0.5, duration: 0.55 });
+        break;
+      case "checker-board":
+        gridReveal(c, canvasA, canvasB, alpha, w, h, 12, 8, (r, col) => (r + col) % 2, {
+          spread: 0.55,
+          duration: 0.4,
+        });
+        break;
+      case "box":
+        gridReveal(
+          c,
+          canvasA,
+          canvasB,
+          alpha,
+          w,
+          h,
+          9,
+          7,
+          (r, col, rows, cols) => Math.max(Math.abs(r - (rows - 1) / 2), Math.abs(col - (cols - 1) / 2)),
+          { spread: 0.7, duration: 0.4 }
+        );
+        break;
+      case "random-bars": {
+        const strips = stripsCols(w, h, 16, () => ({ dx: 0, dy: -1 }), (i) => hashRand(i) * 0.5);
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+
+      // ---- Curtain slides ----
+      case "blinds": {
+        const strips = stripsRows(w, h, 10, () => ({ dx: 0, dy: -1 }));
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+      case "venetian-blinds": {
+        const strips = stripsRows(w, h, 16, () => ({ dx: 0, dy: 1 }));
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+      case "shutter": {
+        const strips = stripsCols(w, h, 8, (i, n) => ({ dx: i < n / 2 ? -1 : 1, dy: 0 }));
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+      case "comb": {
+        const strips = stripsCols(w, h, 12, (i) => ({ dx: 0, dy: i % 2 === 0 ? -1 : 1 }));
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+      case "melt": {
+        const cols = 14;
+        const strips = stripsCols(w, h, cols, () => ({ dx: 0, dy: 1 }), (i) => {
+          const centerDist = Math.abs(i - (cols - 1) / 2) / (cols / 2);
+          return centerDist * 0.4;
+        });
+        curtainReveal(c, canvasA, canvasB, alpha, w, h, strips);
+        break;
+      }
+      case "smear": {
+        // Directional motion-smear: several offset, fading copies of B are
+        // drawn sliding in over A, approximating a paintbrush/smear blend.
+        c.drawImage(canvasA, 0, 0);
+        const streaks = 6;
+        for (let i = streaks; i >= 1; i--) {
+          const t = i / streaks;
+          const off = (1 - alpha) * w * 0.4 * t;
+          c.save();
+          c.globalAlpha = clamp01(alpha * (1 - t * 0.6));
+          c.drawImage(canvasB, off, 0);
+          c.restore();
+        }
+        c.save();
+        c.globalAlpha = clamp01(alpha);
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+      case "fluid": {
+        const rows = 14;
+        const rh = h / rows;
+        c.drawImage(canvasB, 0, 0);
+        for (let i = 0; i < rows; i++) {
+          const ca = clamp01(alpha * 1.3 - (i / rows) * 0.3);
+          if (ca >= 1) continue;
+          const jitter = Math.sin(i * 1.7 + alpha * 8) * (1 - ca) * 14;
+          c.save();
+          c.beginPath();
+          c.rect(0, i * rh, w, rh + 0.5);
+          c.clip();
+          c.globalAlpha = 1 - ca;
+          c.drawImage(canvasA, jitter, 0);
+          c.restore();
+        }
+        break;
+      }
+
+      // ---- Slide / push / directional ----
+      case "slide": {
         c.drawImage(canvasA, -alpha * w, 0);
         c.drawImage(canvasB, w - alpha * w, 0);
         break;
       }
-      case "slide-right": {
-        c.drawImage(canvasA, alpha * w, 0);
-        c.drawImage(canvasB, -w + alpha * w, 0);
-        break;
-      }
-      case "slide-up": {
+      case "push": {
         c.drawImage(canvasA, 0, -alpha * h);
         c.drawImage(canvasB, 0, h - alpha * h);
         break;
       }
-      case "slide-down": {
-        c.drawImage(canvasA, 0, alpha * h);
-        c.drawImage(canvasB, 0, -h + alpha * h);
-        break;
-      }
-      case "zoom-in": {
-        // Outgoing frame holds still; incoming frame grows in from small to full size.
-        c.drawImage(canvasA, 0, 0);
+      case "pan": {
+        const s = 1 + 0.06 * Math.sin(alpha * Math.PI);
         c.save();
-        c.globalAlpha = alpha;
-        const scale = 1.4 - 0.4 * alpha;
-        const dw = w * scale,
-          dh = h * scale;
-        c.drawImage(canvasB, (w - dw) / 2, (h - dh) / 2, dw, dh);
+        drawTransformed(c, canvasA, w, h, s, 0, -alpha * w);
+        c.restore();
+        c.save();
+        drawTransformed(c, canvasB, w, h, s, 0, w - alpha * w);
         c.restore();
         break;
       }
-      case "zoom-out": {
-        // Outgoing frame grows/zooms away while fading; incoming frame fades in at normal size.
+      case "gallery": {
         c.save();
-        c.globalAlpha = 1 - alpha;
-        const scaleA = 1 + 0.4 * alpha;
-        const dwA = w * scaleA,
-          dhA = h * scaleA;
-        c.drawImage(canvasA, (w - dwA) / 2, (h - dhA) / 2, dwA, dhA);
+        c.globalAlpha = clamp01(1 - alpha * 1.3);
+        drawTransformed(c, canvasA, w, h, 1 - 0.1 * alpha, -0.05 * alpha, -alpha * w * 0.5);
         c.restore();
         c.save();
-        c.globalAlpha = alpha;
-        c.drawImage(canvasB, 0, 0);
+        c.globalAlpha = clamp01(alpha * 1.3);
+        drawTransformed(c, canvasB, w, h, 0.9 + 0.1 * alpha, 0.05 * (1 - alpha), (1 - alpha) * w * 0.5);
         c.restore();
         break;
       }
-      case "wipe-left": {
-        // Incoming frame is revealed by a hard edge sweeping from the right toward the left.
-        c.drawImage(canvasA, 0, 0);
-        const x = w - alpha * w;
+      case "swap": {
+        const e = ease(alpha);
+        c.drawImage(canvasA, 0, -e * h);
+        c.drawImage(canvasB, 0, h - e * h);
+        break;
+      }
+      case "stretch": {
         c.save();
         c.beginPath();
-        c.rect(x, 0, w - x, h);
+        c.rect(0, 0, w * (1 - alpha), h);
         c.clip();
-        c.drawImage(canvasB, 0, 0);
+        drawTransformed(c, canvasA, w, h, 1 - alpha, 0, (-alpha * w) / 2, 0, 1);
         c.restore();
-        break;
-      }
-      case "wipe-right": {
-        // Incoming frame is revealed by a hard edge sweeping from the left toward the right.
-        c.drawImage(canvasA, 0, 0);
-        const width = alpha * w;
         c.save();
         c.beginPath();
-        c.rect(0, 0, width, h);
+        c.rect(w * (1 - alpha), 0, w * alpha, h);
         c.clip();
+        drawTransformed(c, canvasB, w, h, alpha, 0, ((1 - alpha) * w) / 2, 0, 1);
+        c.restore();
+        break;
+      }
+
+      // ---- Zoom family ----
+      case "zoom":
+        zoomBlend(c, canvasA, canvasB, alpha, w, h, { aScaleTo: 1.15, bScaleFrom: 0.85 });
+        break;
+      case "cross-zoom":
+        zoomBlend(c, canvasA, canvasB, alpha, w, h, { aScaleTo: 1.6, bScaleFrom: 0.4 });
+        break;
+      case "zoom-rotate":
+        zoomBlend(c, canvasA, canvasB, alpha, w, h, { aScaleTo: 1.3, bScaleFrom: 0.6, rotate: 0.6 });
+        break;
+      case "morph":
+        zoomBlend(c, canvasA, canvasB, alpha, w, h, { aScaleTo: 1.05, bScaleFrom: 0.95 });
+        break;
+      case "warp": {
+        c.save();
+        c.globalAlpha = clamp01(1 - alpha);
+        c.setTransform(1 + alpha * 0.3, alpha * 0.15, 0, 1 - alpha * 0.15, 0, 0);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        c.save();
+        c.globalAlpha = clamp01(alpha);
+        c.setTransform(1 - (1 - alpha) * 0.3, -(1 - alpha) * 0.15, 0, 1 + (1 - alpha) * 0.15, 0, 0);
+        c.drawImage(canvasB, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+      case "fly-in": {
+        c.drawImage(canvasA, 0, 0);
+        const e = ease(alpha);
+        const s = 0.15 + 0.85 * e;
+        const x = -w * 0.6 * (1 - e);
+        const y = -h * 0.6 * (1 - e);
+        c.save();
+        c.globalAlpha = clamp01(alpha * 2);
+        drawTransformed(c, canvasB, w, h, s, 0, x, y);
+        c.restore();
+        break;
+      }
+      case "fly-through": {
+        c.save();
+        c.globalAlpha = clamp01(1 - alpha * 1.3);
+        drawTransformed(c, canvasA, w, h, 1 + alpha * 2.2);
+        c.restore();
+        c.save();
+        c.globalAlpha = ease(alpha);
         c.drawImage(canvasB, 0, 0);
         c.restore();
         break;
       }
-      case "fade":
+      case "orbit": {
+        c.drawImage(canvasA, 0, 0);
+        const ang = Math.PI * 1.2 * (1 - alpha) + Math.PI / 2;
+        const radius = Math.hypot(w, h) * 0.5 * (1 - alpha);
+        const x = Math.cos(ang) * radius;
+        const y = Math.sin(ang) * radius * 0.5;
+        c.save();
+        c.globalAlpha = clamp01(alpha * 1.4);
+        drawTransformed(c, canvasB, w, h, 0.5 + 0.5 * alpha, (1 - alpha) * 0.8, x, y);
+        c.restore();
+        break;
+      }
+      case "ferris-wheel": {
+        c.drawImage(canvasA, 0, 0);
+        const ang = Math.PI * (1 - alpha) + Math.PI / 2;
+        const radius = h * 0.7 * (1 - alpha);
+        const x = Math.cos(ang) * radius * 0.3;
+        const y = Math.sin(ang) * radius;
+        c.save();
+        c.globalAlpha = clamp01(alpha * 1.4);
+        drawTransformed(c, canvasB, w, h, 0.6 + 0.4 * alpha, (1 - alpha) * 1.2, x, y * 0.5);
+        c.restore();
+        break;
+      }
+
+      // ---- Flip / 3D-ish ----
+      case "flip": {
+        if (alpha < 0.5) {
+          drawTransformed(c, canvasA, w, h, Math.max(0.001, 1 - alpha * 2), 0, 0, 0, 1);
+        } else {
+          drawTransformed(c, canvasB, w, h, Math.max(0.001, (alpha - 0.5) * 2), 0, 0, 0, 1);
+        }
+        break;
+      }
+      case "rotate": {
+        c.save();
+        c.globalAlpha = clamp01(1 - alpha);
+        drawTransformed(c, canvasA, w, h, 1 - 0.3 * alpha, -alpha * 0.9);
+        c.restore();
+        c.save();
+        c.globalAlpha = clamp01(alpha);
+        drawTransformed(c, canvasB, w, h, 0.7 + 0.3 * alpha, (1 - alpha) * 0.9);
+        c.restore();
+        break;
+      }
+      case "door": {
+        c.drawImage(canvasB, 0, 0);
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, w, h);
+        c.clip();
+        drawTransformed(c, canvasA, w, h, Math.max(0.001, 1 - alpha), 0, (-alpha * w) / 2, 0, 1);
+        c.restore();
+        break;
+      }
+      case "cube": {
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, w * (1 - alpha), h);
+        c.clip();
+        c.setTransform(1, 0, alpha * 0.3, 1, -alpha * w * 0.3, 0);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        c.save();
+        c.beginPath();
+        c.rect(w * (1 - alpha), 0, w * alpha, h);
+        c.clip();
+        c.setTransform(1, 0, -(1 - alpha) * 0.3, 1, w - (1 - alpha) * w * 0.7, 0);
+        c.drawImage(canvasB, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+      case "cube-rotate": {
+        c.save();
+        c.globalAlpha = clamp01(1 - alpha);
+        c.setTransform(1 - alpha * 0.6, 0, 0, 1, alpha * w * 0.3, 0);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        c.save();
+        c.globalAlpha = clamp01(alpha);
+        c.setTransform(alpha * 0.6 + 0.001, 0, 0, 1, -(1 - alpha) * w * 0.3, 0);
+        c.drawImage(canvasB, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+      case "page-turn": {
+        c.drawImage(canvasB, 0, 0);
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, w, h);
+        c.clip();
+        const scaleX = Math.max(0.001, 1 - alpha);
+        c.setTransform(scaleX, alpha * 0.08, 0, 1, 0, 0);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+      case "page-curl": {
+        c.drawImage(canvasB, 0, 0);
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, w, h);
+        c.clip();
+        const scaleX = Math.max(0.001, 1 - alpha);
+        const scaleY = Math.max(0.001, 1 - alpha * 0.25);
+        c.setTransform(scaleX, alpha * 0.12, alpha * 0.05, scaleY, w * alpha * 0.05, h * alpha * 0.05);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+      case "peel": {
+        c.drawImage(canvasB, 0, 0);
+        c.save();
+        c.beginPath();
+        // Diagonal clip line sweeping across, so A appears to peel off corner-first.
+        const diag = (1 - alpha) * (w + h);
+        c.moveTo(0, 0);
+        c.lineTo(Math.min(w, diag), 0);
+        c.lineTo(0, Math.min(h, diag));
+        c.closePath();
+        c.clip();
+        c.setTransform(1, alpha * 0.05, alpha * 0.05, 1, -alpha * 20, -alpha * 20);
+        c.drawImage(canvasA, 0, 0, w, h);
+        c.restore();
+        break;
+      }
+
+      // ---- Wave / organic warp (approximated with strips, no per-pixel cost) ----
+      case "wave":
+        waveWipe(c, canvasA, canvasB, alpha, w, h, false, 0.07, 3, 44);
+        break;
+      case "wave-horizontal":
+        waveWipe(c, canvasA, canvasB, alpha, w, h, true, 0.07, 3, 44);
+        break;
+      case "ripple":
+        rippleReveal(c, canvasA, canvasB, alpha, w, h, 9, 0);
+        break;
+      case "ripple-radial":
+        rippleReveal(c, canvasA, canvasB, alpha, w, h, 14, 0.04);
+        break;
+      case "swirl":
+        ringRotateWarp(c, canvasA, canvasB, alpha, w, h, { rings: 7, maxAngle: Math.PI * 0.6, shrink: 0.1 });
+        break;
+      case "twirl":
+        ringRotateWarp(c, canvasA, canvasB, alpha, w, h, { rings: 9, maxAngle: Math.PI * 0.9, shrink: 0.15 });
+        break;
+      case "vortex":
+        ringRotateWarp(c, canvasA, canvasB, alpha, w, h, {
+          rings: 10,
+          maxAngle: Math.PI * 1.3,
+          shrink: 0.3,
+          reverse: true,
+        });
+        break;
+      case "spiral":
+        ringRotateWarp(c, canvasA, canvasB, alpha, w, h, {
+          rings: 12,
+          maxAngle: Math.PI * 1.6,
+          shrink: 0.2,
+        });
+        break;
+
+      // ---- Color overlay ----
+      case "color-wash":
+        colorOverlayTransition(c, canvasA, canvasB, alpha, w, h, (cc, ww, hh) => {
+          cc.fillStyle = "#6c5ce7";
+          cc.fillRect(0, 0, ww, hh);
+        });
+        break;
+      case "light-leak":
+        colorOverlayTransition(
+          c,
+          canvasA,
+          canvasB,
+          alpha,
+          w,
+          h,
+          (cc, ww, hh) => {
+            const g = cc.createRadialGradient(ww * 0.8, hh * 0.2, 0, ww * 0.8, hh * 0.2, Math.hypot(ww, hh) * 0.7);
+            g.addColorStop(0, "rgba(255,244,214,1)");
+            g.addColorStop(1, "rgba(255,244,214,0)");
+            cc.fillStyle = g;
+            cc.fillRect(0, 0, ww, hh);
+          },
+          0.5,
+          0.55
+        );
+        break;
+      case "flash":
+        colorOverlayTransition(
+          c,
+          canvasA,
+          canvasB,
+          alpha,
+          w,
+          h,
+          (cc, ww, hh) => {
+            cc.fillStyle = "#ffffff";
+            cc.fillRect(0, 0, ww, hh);
+          },
+          0.5,
+          0.18
+        );
+        break;
+      case "burn":
+        colorOverlayTransition(
+          c,
+          canvasA,
+          canvasB,
+          alpha,
+          w,
+          h,
+          (cc, ww, hh) => {
+            const g = cc.createRadialGradient(ww / 2, hh / 2, 0, ww / 2, hh / 2, Math.hypot(ww, hh) / 2);
+            g.addColorStop(0, "rgba(255,150,20,1)");
+            g.addColorStop(0.6, "rgba(120,20,0,1)");
+            g.addColorStop(1, "rgba(0,0,0,1)");
+            cc.fillStyle = g;
+            cc.fillRect(0, 0, ww, hh);
+          },
+          0.5,
+          0.4
+        );
+        break;
+
       default: {
+        // Fallback: plain crossfade for any unmapped type.
         c.drawImage(canvasA, 0, 0);
         c.save();
         c.globalAlpha = alpha;
@@ -664,7 +1467,10 @@
     }
 
     const nextDur = nextSeg.end - nextSeg.start;
-    const trans = Math.max(0, Math.min(transitionDuration, segDur, nextDur));
+    // "cut" is an instant switch — treat its effective transition duration
+    // as zero regardless of the slider, so it never blends.
+    const trans =
+      transitionType === "cut" ? 0 : Math.max(0, Math.min(transitionDuration, segDur, nextDur));
 
     if (trans <= 0 || tt < seg.end - trans) {
       drawSlideContent(c, seg.slide, curProgress, w, h);

@@ -117,21 +117,30 @@ If you'd rather not install anything at all, you don't have to — see below.
 - **Text-to-Video**: You type text on colored slides. Each slide fades in and
   is shown for a duration you choose, then transitions into the next slide
   using whichever effect you pick for that slide.
-- **Fully automatic transitions/VFX**: There is no manual transition picker.
-  Every scene/slide automatically gets a **different** transition effect
-  into the next one — the app cycles through a pool of effects based on each
-  scene's position, so the sequence is always varied with zero manual setup:
-  - 🌫️ Fade (crossfade)
-  - ⬅️ Slide Left / ➡️ Slide Right / ⬆️ Slide Up / ⬇️ Slide Down
-  - 🔍 Zoom In / 🔎 Zoom Out
-  - ◀️ Wipe Left / ▶️ Wipe Right
-  
+- **Fully automatic transitions/VFX — 62 effects**: There is no manual
+  transition picker. Every scene/slide automatically gets a **different**
+  transition effect into the next one — the app cycles through a pool of
+  **62 distinct effects** based on each scene's position, so the sequence is
+  always varied with zero manual setup:
+
+  Cut, Fade, Dissolve, Wipe, Slide, Push, Zoom, Split, Reveal, Random Bars,
+  Blinds, Box, Checkerboard, Diamond, Fly In, Glitch, Morph, Page Turn, Peel,
+  Ripple, Spiral, Swirl, Vortex, Wave, Zoom Rotate, Cube, Door, Flip,
+  Gallery, Pan, Rotate, Orbit, Swap, Ferris Wheel, Fly Through, Flash, Burn,
+  Color Wash, Light Leak, Shutter, Smear, Cross Zoom, Linear Wipe, Radial
+  Wipe, Clock Wipe, Wedge, Comb, Shape Wipe, Barn Door, Iris, Venetian
+  Blinds, Checker Board, Dissolve Noise, Fluid, Melt, Page Curl, Ripple
+  Radial, Wave Horizontal, Cube Rotate, Stretch, Twirl, Warp
+
   The scene list shows which effect each scene will automatically use (e.g.
   "Transition to next: 🔍 Zoom In (automatic)") so you always know what's
   coming — you just can't override it per-slide. Reordering, adding, or
-  removing scenes automatically keeps the effect sequence varied. The
+  removing scenes automatically keeps the effect sequence varied, and the
+  starting effect is randomized each time you load the app. The
   **"Transition duration"** slider in Video Settings controls how long each
-  effect takes to play out.
+  effect takes to play out. All 62 effects are drawn live with plain
+  `<canvas>` 2D operations (no per-pixel filters, no WebGL, no AI) so they
+  stay smooth even on a CPU-only, 8GB RAM machine.
 - Everything is drawn live onto an HTML5 `<canvas>` element using plain
   JavaScript — this is standard 2D drawing, not AI, so it runs instantly and
   smoothly even on a CPU-only, 8GB RAM machine.
