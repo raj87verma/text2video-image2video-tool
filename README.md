@@ -112,9 +112,24 @@ If you'd rather not install anything at all, you don't have to — see below.
 
 - **Image-to-Video**: You upload one or more photos. Each photo becomes a
   "scene" that is slowly zoomed/panned (the classic "Ken Burns effect") for a
-  duration you choose, with a crossfade transition into the next photo.
+  duration you choose, then transitions into the next photo using whichever
+  effect you pick for that scene (see below).
 - **Text-to-Video**: You type text on colored slides. Each slide fades in and
-  is shown for a duration you choose, then crossfades into the next slide.
+  is shown for a duration you choose, then transitions into the next slide
+  using whichever effect you pick for that slide.
+- **Per-slide transitions/VFX**: Every scene/slide has its own **"Transition
+  into next scene/slide"** dropdown, so you can mix and match effects
+  throughout the video instead of using the same one everywhere. Available
+  effects:
+  - 🌫️ Fade (crossfade)
+  - ✂️ Hard Cut (instant switch, no transition)
+  - ⬅️ Slide Left / ➡️ Slide Right / ⬆️ Slide Up / ⬇️ Slide Down
+  - 🔍 Zoom In / 🔎 Zoom Out
+  - ◀️ Wipe Left / ▶️ Wipe Right
+  
+  The **"Transition duration"** slider in Video Settings controls how long
+  each of these effects takes to play out (applies to whichever effect each
+  individual scene/slide has selected).
 - Everything is drawn live onto an HTML5 `<canvas>` element using plain
   JavaScript — this is standard 2D drawing, not AI, so it runs instantly and
   smoothly even on a CPU-only, 8GB RAM machine.
@@ -136,10 +151,12 @@ you can even disconnect from the internet and it will work exactly the same.
    Windows). That's it — no install, no server, no command line.
 3. Pick a tab:
    - **🖼️ Image to Video** — click "Add image(s)" and choose photos from
-     your PC. Adjust each scene's duration, reorder with ↑ / ↓, and remove
-     any you don't want.
-   - **🔤 Text to Video** — click "+ Add Text Slide", type your text, and
-     pick a background/text color and font size for each slide.
+     your PC. For each scene, adjust the duration, pick a **transition
+     effect** from the dropdown, reorder with ↑ / ↓, and remove any you
+     don't want.
+   - **🔤 Text to Video** — click "+ Add Text Slide", type your text, pick
+     a background/text color and font size, and choose a **transition
+     effect** for each slide.
 4. Optionally add a background music file (mp3/wav) and set its volume.
 5. Choose resolution and FPS. For your CPU-only PC, **854x480** will record
    fastest; 1280x720 is a good default; 1920x1080 will be slower.

@@ -35,15 +35,42 @@
     );
   }
 
+  // ---------- Transition / VFX effect catalog ----------
+  // Each slide picks its own transition — this is the effect played while
+  // moving FROM that slide INTO the next one.
+  const TRANSITION_TYPES = [
+    { value: "fade", label: "🌫️ Fade (crossfade)" },
+    { value: "cut", label: "✂️ Hard Cut (no transition)" },
+    { value: "slide-left", label: "⬅️ Slide Left" },
+    { value: "slide-right", label: "➡️ Slide Right" },
+    { value: "slide-up", label: "⬆️ Slide Up" },
+    { value: "slide-down", label: "⬇️ Slide Down" },
+    { value: "zoom-in", label: "🔍 Zoom In" },
+    { value: "zoom-out", label: "🔎 Zoom Out" },
+    { value: "wipe-left", label: "◀️ Wipe Left" },
+    { value: "wipe-right", label: "▶️ Wipe Right" },
+  ];
+  const DEFAULT_TRANSITION = "fade";
+
+  function transitionOptionsHtml(selected) {
+    return TRANSITION_TYPES.map(
+      (t) =>
+        `<option value="${t.value}"${t.value === selected ? " selected" : ""}>${t.label}</option>`
+    ).join("");
+  }
+
+  const selectFieldStyle =
+    "width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;";
+
   // ---------- State ----------
   let mode = "image"; // 'image' | 'text'
   let idCounter = 0;
   const nextId = () => ++idCounter;
 
-  /** @type {Array<{id:number,img:HTMLImageElement,url:string,duration:number,zoomDir:string,p0x:number,p1x:number,p0y:number,p1y:number}>} */
+  /** @type {Array<{id:number,img:HTMLImageElement,url:string,duration:number,zoomDir:string,p0x:number,p1x:number,p0y:number,p1y:number,transitionType:string}>} */
   let imageSlides = [];
 
-  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number}>} */
+  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number,transitionType:string}>} */
   let textSlides = [
     {
       id: nextId(),
@@ -52,6 +79,7 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 56,
+      transitionType: DEFAULT_TRANSITION,
     },
   ];
 
@@ -153,6 +181,7 @@
         p1x: 0.65 + Math.random() * 0.2,
         p0y: 0.15 + Math.random() * 0.2,
         p1y: 0.65 + Math.random() * 0.2,
+        transitionType: DEFAULT_TRANSITION,
       });
     });
     imgFileInput.value = "";
@@ -176,6 +205,12 @@
             <input type="number" min="0.5" max="20" step="0.5" value="${slide.duration}" data-id="${slide.id}" class="dur-input" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;" />
           </div>
         </div>
+        <div class="field" style="margin:8px 0 0;">
+          <label style="font-size:12px;color:var(--text-dim);">Transition into next scene</label>
+          <select data-id="${slide.id}" class="transition-input" style="${selectFieldStyle}">
+            ${transitionOptionsHtml(slide.transitionType)}
+          </select>
+        </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="btn btn-secondary move-up" data-id="${slide.id}" style="padding:5px 8px;font-size:12px;">↑ Up</button>
           <button class="btn btn-secondary move-down" data-id="${slide.id}" style="padding:5px 8px;font-size:12px;">↓ Down</button>
@@ -197,6 +232,13 @@
         const id = Number(inp.dataset.id);
         const slide = imageSlides.find((s) => s.id === id);
         if (slide) slide.duration = Math.max(0.5, parseFloat(inp.value) || 3);
+      })
+    );
+    imageSlideListEl.querySelectorAll(".transition-input").forEach((sel) =>
+      sel.addEventListener("change", () => {
+        const id = Number(sel.dataset.id);
+        const slide = imageSlides.find((s) => s.id === id);
+        if (slide) slide.transitionType = sel.value;
       })
     );
     imageSlideListEl.querySelectorAll(".move-up").forEach((btn) =>
@@ -232,6 +274,7 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 48,
+      transitionType: DEFAULT_TRANSITION,
     });
     renderTextSlideList();
     renderCurrentModePreviewFrame();
@@ -272,6 +315,12 @@
             <label style="font-size:12px;">Duration (s)</label>
             <input type="number" min="0.5" max="20" step="0.5" data-id="${slide.id}" class="dur-input" value="${slide.duration}" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;" />
           </div>
+        </div>
+        <div class="field" style="margin:8px 0 0;">
+          <label style="font-size:12px;">Transition into next slide</label>
+          <select data-id="${slide.id}" class="transition-input" style="${selectFieldStyle}">
+            ${transitionOptionsHtml(slide.transitionType)}
+          </select>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="btn btn-secondary move-up" data-id="${slide.id}" style="padding:5px 8px;font-size:12px;">↑ Up</button>
@@ -321,6 +370,12 @@
       inp.addEventListener("input", () => {
         const slide = textSlides.find((s) => s.id === Number(inp.dataset.id));
         if (slide) slide.duration = Math.max(0.5, parseFloat(inp.value) || 3);
+      })
+    );
+    textSlideListEl.querySelectorAll(".transition-input").forEach((sel) =>
+      sel.addEventListener("change", () => {
+        const slide = textSlides.find((s) => s.id === Number(sel.dataset.id));
+        if (slide) slide.transitionType = sel.value;
       })
     );
     textSlideListEl.querySelectorAll(".move-up").forEach((btn) =>
@@ -479,7 +534,114 @@
     else drawTextSlideContent(c, slide, progress, w, h);
   }
 
-  function renderAt(c, timeline, total, t, w, h, transition) {
+  // ---------- Offscreen buffers used to composite transition effects ----------
+  const offA = document.createElement("canvas");
+  const offB = document.createElement("canvas");
+  const offCtxA = offA.getContext("2d");
+  const offCtxB = offB.getContext("2d");
+
+  function ensureOffscreenSize(w, h) {
+    if (offA.width !== w || offA.height !== h) {
+      offA.width = w;
+      offA.height = h;
+    }
+    if (offB.width !== w || offB.height !== h) {
+      offB.width = w;
+      offB.height = h;
+    }
+  }
+
+  /**
+   * Composite the outgoing slide (canvasA) and incoming slide (canvasB)
+   * onto the main context `c`, according to the chosen VFX/transition type.
+   * `alpha` goes from 0 (fully on A) to 1 (fully on B).
+   */
+  function compositeTransition(c, type, canvasA, canvasB, alpha, w, h) {
+    switch (type) {
+      case "slide-left": {
+        c.drawImage(canvasA, -alpha * w, 0);
+        c.drawImage(canvasB, w - alpha * w, 0);
+        break;
+      }
+      case "slide-right": {
+        c.drawImage(canvasA, alpha * w, 0);
+        c.drawImage(canvasB, -w + alpha * w, 0);
+        break;
+      }
+      case "slide-up": {
+        c.drawImage(canvasA, 0, -alpha * h);
+        c.drawImage(canvasB, 0, h - alpha * h);
+        break;
+      }
+      case "slide-down": {
+        c.drawImage(canvasA, 0, alpha * h);
+        c.drawImage(canvasB, 0, -h + alpha * h);
+        break;
+      }
+      case "zoom-in": {
+        // Outgoing frame holds still; incoming frame grows in from small to full size.
+        c.drawImage(canvasA, 0, 0);
+        c.save();
+        c.globalAlpha = alpha;
+        const scale = 1.4 - 0.4 * alpha;
+        const dw = w * scale,
+          dh = h * scale;
+        c.drawImage(canvasB, (w - dw) / 2, (h - dh) / 2, dw, dh);
+        c.restore();
+        break;
+      }
+      case "zoom-out": {
+        // Outgoing frame grows/zooms away while fading; incoming frame fades in at normal size.
+        c.save();
+        c.globalAlpha = 1 - alpha;
+        const scaleA = 1 + 0.4 * alpha;
+        const dwA = w * scaleA,
+          dhA = h * scaleA;
+        c.drawImage(canvasA, (w - dwA) / 2, (h - dhA) / 2, dwA, dhA);
+        c.restore();
+        c.save();
+        c.globalAlpha = alpha;
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+      case "wipe-left": {
+        // Incoming frame is revealed by a hard edge sweeping from the right toward the left.
+        c.drawImage(canvasA, 0, 0);
+        const x = w - alpha * w;
+        c.save();
+        c.beginPath();
+        c.rect(x, 0, w - x, h);
+        c.clip();
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+      case "wipe-right": {
+        // Incoming frame is revealed by a hard edge sweeping from the left toward the right.
+        c.drawImage(canvasA, 0, 0);
+        const width = alpha * w;
+        c.save();
+        c.beginPath();
+        c.rect(0, 0, width, h);
+        c.clip();
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+      case "fade":
+      default: {
+        c.drawImage(canvasA, 0, 0);
+        c.save();
+        c.globalAlpha = alpha;
+        c.drawImage(canvasB, 0, 0);
+        c.restore();
+        break;
+      }
+    }
+  }
+
+  function renderAt(c, timeline, total, t, w, h, transitionDuration) {
     c.clearRect(0, 0, w, h);
     if (timeline.length === 0) {
       c.fillStyle = "#000";
@@ -492,20 +654,33 @@
     const seg = timeline[idx];
     const segDur = seg.end - seg.start;
     const localT = segDur > 0 ? (tt - seg.start) / segDur : 1;
-    drawSlideContent(c, seg.slide, Math.min(Math.max(localT, 0), 1), w, h);
+    const curProgress = Math.min(Math.max(localT, 0), 1);
 
     const nextSeg = timeline[idx + 1];
-    if (nextSeg) {
-      const nextDur = nextSeg.end - nextSeg.start;
-      const trans = Math.max(0, Math.min(transition, segDur, nextDur));
-      if (trans > 0 && tt >= seg.end - trans) {
-        const alpha = (tt - (seg.end - trans)) / trans;
-        c.save();
-        c.globalAlpha = Math.max(0, Math.min(1, alpha));
-        drawSlideContent(c, nextSeg.slide, 0, w, h);
-        c.restore();
-      }
+    const transitionType = seg.slide.transitionType || DEFAULT_TRANSITION;
+
+    // No next slide, or this slide is set to a hard cut: draw plainly, no compositing.
+    if (!nextSeg || transitionType === "cut") {
+      drawSlideContent(c, seg.slide, curProgress, w, h);
+      return;
     }
+
+    const nextDur = nextSeg.end - nextSeg.start;
+    const trans = Math.max(0, Math.min(transitionDuration, segDur, nextDur));
+
+    if (trans <= 0 || tt < seg.end - trans) {
+      drawSlideContent(c, seg.slide, curProgress, w, h);
+      return;
+    }
+
+    // We're inside the transition window leading into the next slide.
+    const alpha = Math.max(0, Math.min(1, (tt - (seg.end - trans)) / trans));
+    ensureOffscreenSize(w, h);
+    offCtxA.clearRect(0, 0, w, h);
+    offCtxB.clearRect(0, 0, w, h);
+    drawSlideContent(offCtxA, seg.slide, curProgress, w, h);
+    drawSlideContent(offCtxB, nextSeg.slide, 0, w, h);
+    compositeTransition(c, transitionType, offA, offB, alpha, w, h);
   }
 
   function renderCurrentModePreviewFrame() {
