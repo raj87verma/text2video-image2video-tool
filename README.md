@@ -23,10 +23,86 @@ shortcuts — it does not download anything or contact any server, during
 installation or while the app runs.
 
 > Note: Since this installer isn't digitally signed with a paid certificate,
-> Windows SmartScreen may show an "Unknown publisher" warning the first time
-> you run it. Click **"More info" → "Run anyway"** to proceed — this is
-> normal for small independent tools and does not mean the file is unsafe;
-> it just means it's not been through Microsoft's paid signing program.
+> Windows SmartScreen may show a warning the first time you run it — see the
+> detailed walkthrough below for exactly what it looks like and how to
+> proceed safely.
+
+## ⚠️ Windows SmartScreen warning — detailed guide
+
+**Why this happens:** Windows SmartScreen flags any downloaded `.exe` that
+isn't signed with a paid Microsoft-recognized certificate (these cost money
+and require a business identity to obtain) and doesn't yet have a large
+install base. This is **normal for small/independent tools** — it is not an
+indication that the file is unsafe. This project is fully open-source (every
+file is in this repo, [`installer-src/`](./installer-src)), so you can read
+exactly what it does before trusting it.
+
+*(I can't attach a real screenshot here since I don't have a Windows machine
+to capture one — but the layout and wording below is accurate to how the
+dialog actually appears, based on
+[Microsoft's own documentation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).)*
+
+**Step 1 — You'll see this first screen** when you double-click
+`LocalVideoMaker-Setup.exe`:
+
+```
+┌──────────────────────────────────────────────────┐
+│                                                    │
+│   🛡️  Windows protected your PC                   │
+│                                                    │
+│   Microsoft Defender SmartScreen prevented an     │
+│   unrecognized app from starting. Running this    │
+│   app might put your PC at risk.                  │
+│                                                    │
+│                                    [ More info ]  │  ← click this
+│                                                    │
+└──────────────────────────────────────────────────┘
+```
+
+**Step 2 — Click "More info".** The dialog expands and now shows the
+publisher, file name, and a new button:
+
+```
+┌──────────────────────────────────────────────────┐
+│                                                    │
+│   🛡️  Windows protected your PC                   │
+│                                                    │
+│   Microsoft Defender SmartScreen prevented an     │
+│   unrecognized app from starting. Running this    │
+│   app might put your PC at risk.                  │
+│                                                    │
+│   App:       LocalVideoMaker-Setup.exe            │
+│   Publisher: Unknown publisher                    │
+│                                                    │
+│              [ Run anyway ]     [ Don't run ]     │  ← click "Run anyway"
+│                                                    │
+└──────────────────────────────────────────────────┘
+```
+
+**Step 3 — Click "Run anyway".** The normal installer wizard opens and
+proceeds exactly as described above (choose install folder → Install →
+Finish).
+
+**Before you click "Run anyway", verify you trust the source:**
+- ✅ You downloaded it from **this exact repo**:
+  `github.com/raj87verma/text2video-image2video-tool`
+- ✅ The source code for both the app (`index.html`, `app.js`, `style.css`)
+  and the installer itself (`installer-src/installer.nsi`) is visible in this
+  repo — nothing is hidden or obfuscated.
+- ✅ The app makes **zero network requests** — you can verify this yourself
+  by opening Windows Task Manager → Resource Monitor → Network while using
+  the app, or simply by disconnecting from Wi-Fi before using it.
+
+**Why "Unknown publisher" appears:** Publisher verification requires an
+OV/EV code-signing certificate, which costs money annually and requires a
+registered business identity — not something practical for a personal/local
+tool like this one. This is the same warning you'd see on countless free
+open-source Windows utilities distributed directly via GitHub rather than
+the Microsoft Store.
+
+**If you'd rather avoid the warning entirely,** skip the installer and use
+the zero-install browser method in the next section instead — it requires no
+`.exe` file at all, so SmartScreen never gets involved.
 
 ## Or run it with zero installation at all
 
