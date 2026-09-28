@@ -1,36 +1,8 @@
 # Local Video Maker (100% Offline)
 
 A Text-to-Video and Image-to-Video tool that runs **entirely inside your web
-browser**, on your own Windows PC — no Python, no API keys, no internet
-connection, and no AI models.
-
-## 🚀 Easiest way to install: `LocalVideoMaker-Setup.exe`
-
-1. Download **[`LocalVideoMaker-Setup.exe`](./LocalVideoMaker-Setup.exe)** from
-   this repo (click the file → click the "Download raw file" / download
-   button on GitHub).
-2. Double-click it on your Windows PC. It's a normal Windows installer — no
-   internet access is used and no admin rights are required (it installs to
-   your user profile under `%LOCALAPPDATA%\LocalVideoMaker`).
-3. It creates a **"Local Video Maker" shortcut** on your Desktop and in the
-   Start Menu. Click it any time to open the app in your default browser.
-4. To remove it later, use **"Add or Remove Programs" → Local Video Maker**,
-   or the Uninstall shortcut in the Start Menu folder.
-
-The installer itself just copies the same `index.html` / `app.js` /
-`style.css` files (see `installer-src/`) to a folder on your PC and sets up
-shortcuts — it does not download anything or contact any server, during
-installation or while the app runs.
-
-> Note: Since this installer isn't digitally signed with a paid certificate,
-> Windows SmartScreen may show an "Unknown publisher" warning the first time
-> you run it. Click **"More info" → "Run anyway"** to proceed — this is
-> normal for small independent tools and does not mean the file is unsafe;
-> it just means it's not been through Microsoft's paid signing program.
-
-## Or run it with zero installation at all
-
-If you'd rather not install anything at all, you don't have to — see below.
+browser**, on your own Windows PC — no installation, no Python, no API keys,
+no internet connection, and no AI models.
 
 ## How it works (no magic, no AI)
 
