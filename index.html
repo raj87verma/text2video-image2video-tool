@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Local Video Maker — Offline Text/Image to Video</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <h1>🎬 Local Video Maker</h1>
+  <p>Text-to-Video &amp; Image-to-Video — 100% offline, runs only in this browser tab.</p>
+  <div class="badge-row">
+    <span class="badge">No install</span>
+    <span class="badge">No API / Internet</span>
+    <span class="badge">No AI models</span>
+    <span class="badge">Works on CPU only</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="image">🖼️ Image to Video</button>
+  <button class="tab-btn" data-tab="text">🔤 Text to Video</button>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: CONTROLS -->
+  <div class="panel">
+
+    <!-- IMAGE TAB CONTROLS -->
+    <div class="tab-content active" id="tab-image">
+      <h2>Images</h2>
+      <div class="field">
+        <label>Add image(s)</label>
+        <input type="file" id="imgFileInput" accept="image/*" multiple />
+        <div class="hint">Each image becomes one scene with a Ken Burns zoom/pan effect.</div>
+      </div>
+      <div id="imageSlideList"></div>
+
+      <h2 style="margin-top:20px;">Video Settings</h2>
+      <div class="row">
+        <div class="field">
+          <label>Resolution</label>
+          <select id="imgResolution">
+            <option value="1280x720" selected>1280 x 720 (HD)</option>
+            <option value="1920x1080">1920 x 1080 (Full HD)</option>
+            <option value="854x480">854 x 480 (SD - fastest)</option>
+            <option value="720x1280">720 x 1280 (Vertical HD)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>FPS</label>
+          <select id="imgFps">
+            <option value="24">24</option>
+            <option value="30" selected>30</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Transition (crossfade) duration: <span id="imgTransVal">0.6</span>s</label>
+        <input type="range" id="imgTransition" min="0" max="2" step="0.1" value="0.6" />
+      </div>
+
+      <h2 style="margin-top:20px;">Background Music (optional)</h2>
+      <div class="field">
+        <input type="file" id="imgAudioInput" accept="audio/*" />
+      </div>
+      <div class="field">
+        <label>Music volume: <span id="imgVolVal">70</span>%</label>
+        <input type="range" id="imgVolume" min="0" max="100" value="70" />
+      </div>
+      <label style="font-size:13px;color:var(--text-dim);display:flex;gap:6px;align-items:center;">
+        <input type="checkbox" id="imgAudioLoop" checked style="width:auto;" /> Loop music if shorter than video
+      </label>
+    </div>
+
+    <!-- TEXT TAB CONTROLS -->
+    <div class="tab-content" id="tab-text">
+      <h2>Slides</h2>
+      <button class="btn btn-secondary" id="addTextSlideBtn">+ Add Text Slide</button>
+      <div id="textSlideList" style="margin-top:14px;"></div>
+
+      <h2 style="margin-top:20px;">Video Settings</h2>
+      <div class="row">
+        <div class="field">
+          <label>Resolution</label>
+          <select id="txtResolution">
+            <option value="1280x720" selected>1280 x 720 (HD)</option>
+            <option value="1920x1080">1920 x 1080 (Full HD)</option>
+            <option value="854x480">854 x 480 (SD - fastest)</option>
+            <option value="720x1280">720 x 1280 (Vertical HD)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>FPS</label>
+          <select id="txtFps">
+            <option value="24">24</option>
+            <option value="30" selected>30</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Transition (crossfade) duration: <span id="txtTransVal">0.6</span>s</label>
+        <input type="range" id="txtTransition" min="0" max="2" step="0.1" value="0.6" />
+      </div>
+
+      <h2 style="margin-top:20px;">Background Music (optional)</h2>
+      <div class="field">
+        <input type="file" id="txtAudioInput" accept="audio/*" />
+      </div>
+      <div class="field">
+        <label>Music volume: <span id="txtVolVal">70</span>%</label>
+        <input type="range" id="txtVolume" min="0" max="100" value="70" />
+      </div>
+      <label style="font-size:13px;color:var(--text-dim);display:flex;gap:6px;align-items:center;">
+        <input type="checkbox" id="txtAudioLoop" checked style="width:auto;" /> Loop music if shorter than video
+      </label>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: PREVIEW / RECORD -->
+  <div class="panel preview-wrap">
+    <h2 style="align-self:flex-start;">Preview &amp; Export</h2>
+
+    <div class="warn-box" id="warnBox"></div>
+
+    <div class="canvas-frame">
+      <canvas id="previewCanvas" width="1280" height="720"></canvas>
+    </div>
+
+    <div class="action-row" style="width:100%;">
+      <button class="btn btn-secondary" id="playPreviewBtn">▶ Preview (no export)</button>
+      <button class="btn btn-record" id="recordBtn">⏺ Record Video</button>
+      <button class="btn btn-secondary" id="stopBtn" disabled>⏹ Stop</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">Idle</div>
+    </div>
+
+    <div class="result-wrap" id="resultWrap">
+      <video id="resultVideo" controls></video>
+      <br />
+      <a id="downloadLink" class="download-link" download="my-video.webm">⬇ Download video (.webm)</a>
+      <div class="hint">.webm plays in any browser, VLC, and most modern media players.</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
