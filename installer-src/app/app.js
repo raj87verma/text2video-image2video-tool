@@ -36,41 +36,59 @@
   }
 
   // ---------- Transition / VFX effect catalog ----------
-  // Each slide picks its own transition — this is the effect played while
-  // moving FROM that slide INTO the next one.
-  const TRANSITION_TYPES = [
-    { value: "fade", label: "🌫️ Fade (crossfade)" },
-    { value: "cut", label: "✂️ Hard Cut (no transition)" },
-    { value: "slide-left", label: "⬅️ Slide Left" },
-    { value: "slide-right", label: "➡️ Slide Right" },
-    { value: "slide-up", label: "⬆️ Slide Up" },
-    { value: "slide-down", label: "⬇️ Slide Down" },
-    { value: "zoom-in", label: "🔍 Zoom In" },
-    { value: "zoom-out", label: "🔎 Zoom Out" },
-    { value: "wipe-left", label: "◀️ Wipe Left" },
-    { value: "wipe-right", label: "▶️ Wipe Right" },
+  // Transitions are fully automatic: no per-slide manual picker. Every scene
+  // automatically gets a DIFFERENT transition effect into the next one,
+  // cycling through this pool based on its position in the sequence — so
+  // reordering, adding, or removing scenes always keeps the sequence varied
+  // without any manual selection.
+  const AUTO_TRANSITION_POOL = [
+    "fade",
+    "slide-left",
+    "slide-right",
+    "zoom-in",
+    "wipe-left",
+    "slide-up",
+    "zoom-out",
+    "wipe-right",
+    "slide-down",
   ];
-  const DEFAULT_TRANSITION = "fade";
 
-  function transitionOptionsHtml(selected) {
-    return TRANSITION_TYPES.map(
-      (t) =>
-        `<option value="${t.value}"${t.value === selected ? " selected" : ""}>${t.label}</option>`
-    ).join("");
+  // Randomize where the cycle starts each time the app loads, so consecutive
+  // sessions/videos don't always open with the same first transition.
+  const AUTO_TRANSITION_START_OFFSET = Math.floor(
+    Math.random() * AUTO_TRANSITION_POOL.length
+  );
+
+  function autoTransitionForIndex(index) {
+    const i = (index + AUTO_TRANSITION_START_OFFSET) % AUTO_TRANSITION_POOL.length;
+    return AUTO_TRANSITION_POOL[i];
   }
 
-  const selectFieldStyle =
-    "width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;";
+  const TRANSITION_LABELS = {
+    fade: "🌫️ Fade",
+    "slide-left": "⬅️ Slide Left",
+    "slide-right": "➡️ Slide Right",
+    "slide-up": "⬆️ Slide Up",
+    "slide-down": "⬇️ Slide Down",
+    "zoom-in": "🔍 Zoom In",
+    "zoom-out": "🔎 Zoom Out",
+    "wipe-left": "◀️ Wipe Left",
+    "wipe-right": "▶️ Wipe Right",
+    cut: "✂️ Hard Cut",
+  };
+  function transitionLabel(type) {
+    return TRANSITION_LABELS[type] || type;
+  }
 
   // ---------- State ----------
   let mode = "image"; // 'image' | 'text'
   let idCounter = 0;
   const nextId = () => ++idCounter;
 
-  /** @type {Array<{id:number,img:HTMLImageElement,url:string,duration:number,zoomDir:string,p0x:number,p1x:number,p0y:number,p1y:number,transitionType:string}>} */
+  /** @type {Array<{id:number,img:HTMLImageElement,url:string,duration:number,zoomDir:string,p0x:number,p1x:number,p0y:number,p1y:number}>} */
   let imageSlides = [];
 
-  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number,transitionType:string}>} */
+  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number}>} */
   let textSlides = [
     {
       id: nextId(),
@@ -79,7 +97,6 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 56,
-      transitionType: DEFAULT_TRANSITION,
     },
   ];
 
@@ -181,7 +198,6 @@
         p1x: 0.65 + Math.random() * 0.2,
         p0y: 0.15 + Math.random() * 0.2,
         p1y: 0.65 + Math.random() * 0.2,
-        transitionType: DEFAULT_TRANSITION,
       });
     });
     imgFileInput.value = "";
@@ -205,11 +221,8 @@
             <input type="number" min="0.5" max="20" step="0.5" value="${slide.duration}" data-id="${slide.id}" class="dur-input" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;" />
           </div>
         </div>
-        <div class="field" style="margin:8px 0 0;">
-          <label style="font-size:12px;color:var(--text-dim);">Transition into next scene</label>
-          <select data-id="${slide.id}" class="transition-input" style="${selectFieldStyle}">
-            ${transitionOptionsHtml(slide.transitionType)}
-          </select>
+        <div class="hint" style="margin-top:6px;">
+          Transition to next: <strong>${transitionLabel(autoTransitionForIndex(i))}</strong> (automatic)
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="btn btn-secondary move-up" data-id="${slide.id}" style="padding:5px 8px;font-size:12px;">↑ Up</button>
@@ -232,13 +245,6 @@
         const id = Number(inp.dataset.id);
         const slide = imageSlides.find((s) => s.id === id);
         if (slide) slide.duration = Math.max(0.5, parseFloat(inp.value) || 3);
-      })
-    );
-    imageSlideListEl.querySelectorAll(".transition-input").forEach((sel) =>
-      sel.addEventListener("change", () => {
-        const id = Number(sel.dataset.id);
-        const slide = imageSlides.find((s) => s.id === id);
-        if (slide) slide.transitionType = sel.value;
       })
     );
     imageSlideListEl.querySelectorAll(".move-up").forEach((btn) =>
@@ -274,7 +280,6 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 48,
-      transitionType: DEFAULT_TRANSITION,
     });
     renderTextSlideList();
     renderCurrentModePreviewFrame();
@@ -316,11 +321,8 @@
             <input type="number" min="0.5" max="20" step="0.5" data-id="${slide.id}" class="dur-input" value="${slide.duration}" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;" />
           </div>
         </div>
-        <div class="field" style="margin:8px 0 0;">
-          <label style="font-size:12px;">Transition into next slide</label>
-          <select data-id="${slide.id}" class="transition-input" style="${selectFieldStyle}">
-            ${transitionOptionsHtml(slide.transitionType)}
-          </select>
+        <div class="hint" style="margin-top:6px;">
+          Transition to next: <strong>${transitionLabel(autoTransitionForIndex(i))}</strong> (automatic)
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
           <button class="btn btn-secondary move-up" data-id="${slide.id}" style="padding:5px 8px;font-size:12px;">↑ Up</button>
@@ -370,12 +372,6 @@
       inp.addEventListener("input", () => {
         const slide = textSlides.find((s) => s.id === Number(inp.dataset.id));
         if (slide) slide.duration = Math.max(0.5, parseFloat(inp.value) || 3);
-      })
-    );
-    textSlideListEl.querySelectorAll(".transition-input").forEach((sel) =>
-      sel.addEventListener("change", () => {
-        const slide = textSlides.find((s) => s.id === Number(sel.dataset.id));
-        if (slide) slide.transitionType = sel.value;
       })
     );
     textSlideListEl.querySelectorAll(".move-up").forEach((btn) =>
@@ -657,10 +653,12 @@
     const curProgress = Math.min(Math.max(localT, 0), 1);
 
     const nextSeg = timeline[idx + 1];
-    const transitionType = seg.slide.transitionType || DEFAULT_TRANSITION;
+    // Fully automatic: the transition used is determined purely by this
+    // slide's position in the sequence, cycling through the effect pool.
+    const transitionType = autoTransitionForIndex(idx);
 
-    // No next slide, or this slide is set to a hard cut: draw plainly, no compositing.
-    if (!nextSeg || transitionType === "cut") {
+    // No next slide: draw plainly, no compositing.
+    if (!nextSeg) {
       drawSlideContent(c, seg.slide, curProgress, w, h);
       return;
     }
