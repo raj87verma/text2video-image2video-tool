@@ -114,9 +114,26 @@ If you'd rather not install anything at all, you don't have to — see below.
   "scene" that is slowly zoomed/panned (the classic "Ken Burns effect") for a
   duration you choose, then transitions into the next photo using whichever
   effect you pick for that scene (see below).
-- **Text-to-Video**: You type text on colored slides. Each slide fades in and
-  is shown for a duration you choose, then transitions into the next slide
-  using whichever effect you pick for that slide.
+- **Text-to-Video**: You type text on slides. Each slide fades in and is
+  shown for a duration you choose, then transitions into the next slide
+  using whichever effect you pick for that slide. Each text slide's
+  **background** can be one of:
+  - 🎨 **Solid color** — pick any flat background color (original behavior).
+  - ✨ **Automatic (matches your text)** — the app scans your text for
+    keywords (e.g. "night", "love", "birthday", "ocean", "fire") and picks a
+    matching animated background theme (gradient + particles like stars,
+    hearts, confetti, snow, embers, leaves, bubbles, rain...) from 14 built-in
+    moods. This is **not AI** — it's a simple keyword lookup table, fully
+    offline, no internet or model involved. If no keyword matches, it falls
+    back to a default night-themed gradient.
+  - 🖼️ **Custom image (upload)** — upload your own photo as the slide's
+    background; it's automatically cropped to fill the frame.
+  - 🎬 **Custom video (upload)** — upload your own video clip as the slide's
+    background; it plays behind your text in sync while that slide is on
+    screen (and during recording/export too).
+  
+  For image/video backgrounds, an optional **"Darken background"** checkbox
+  dims it so your text stays readable on top.
 - **Fully automatic transitions/VFX — 62 effects**: There is no manual
   transition picker. Every scene/slide automatically gets a **different**
   transition effect into the next one — the app cycles through a pool of
@@ -166,8 +183,10 @@ you can even disconnect from the internet and it will work exactly the same.
      remove any you don't want. The transition into the next scene is
      assigned automatically (shown as a label under each scene).
    - **🔤 Text to Video** — click "+ Add Text Slide", type your text, and
-     pick a background/text color and font size. The transition into the
-     next slide is assigned automatically.
+     choose a **Background** mode: Solid color, Automatic (theme detected
+     from your text), Custom image upload, or Custom video upload. Pick a
+     text color and font size. The transition into the next slide is
+     assigned automatically.
 4. Optionally add a background music file (mp3/wav) and set its volume.
 5. Choose resolution and FPS. For your CPU-only PC, **854x480** will record
    fastest; 1280x720 is a good default; 1920x1080 will be slower.

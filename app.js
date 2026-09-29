@@ -185,6 +185,244 @@
     return TRANSITION_LABELS[type] || type;
   }
 
+  // ---------- Automatic keyword-based background themes ----------
+  // No AI, no API, no internet: this is a plain keyword→theme lookup table.
+  // Each theme is drawn live on <canvas> using gradients + simple procedural
+  // shapes (stars, particles, waves) — nothing downloaded, nothing generated
+  // by a model. If no keyword matches, a default animated gradient is used.
+  const AUTO_THEMES = {
+    night: {
+      keywords: ["night", "dark", "midnight", "moon", "stars", "sleep", "dream"],
+      colors: ["#0b1030", "#1a1f4b", "#05070f"],
+      particles: "stars",
+    },
+    fire: {
+      keywords: ["fire", "hot", "burn", "flame", "heat", "spicy", "danger"],
+      colors: ["#ff512f", "#dd2476", "#3a0a00"],
+      particles: "embers",
+    },
+    love: {
+      keywords: ["love", "heart", "romance", "valentine", "kiss", "wedding", "date"],
+      colors: ["#ff9a9e", "#fecfef", "#ff6a88"],
+      particles: "hearts",
+    },
+    nature: {
+      keywords: ["nature", "forest", "tree", "green", "leaf", "eco", "plant", "garden"],
+      colors: ["#134e13", "#2d6a2d", "#0b2e0b"],
+      particles: "leaves",
+    },
+    ocean: {
+      keywords: ["ocean", "sea", "water", "wave", "beach", "blue", "swim", "fish"],
+      colors: ["#005c97", "#363795", "#00243d"],
+      particles: "bubbles",
+    },
+    rain: {
+      keywords: ["rain", "sad", "cry", "storm", "cloud", "grey", "gray", "gloomy"],
+      colors: ["#4b6584", "#2c3e50", "#1b1f27"],
+      particles: "rain",
+    },
+    celebration: {
+      keywords: ["party", "celebration", "birthday", "congratulations", "congrats", "win", "success", "achievement"],
+      colors: ["#f7971e", "#ffd200", "#e94057"],
+      particles: "confetti",
+    },
+    gold: {
+      keywords: ["gold", "luxury", "premium", "vip", "rich", "money", "award", "winner"],
+      colors: ["#bf953f", "#fcf6ba", "#3a2e0a"],
+      particles: "sparkle",
+    },
+    space: {
+      keywords: ["space", "galaxy", "universe", "planet", "cosmic", "astro", "alien", "future"],
+      colors: ["#020024", "#3a0d61", "#000000"],
+      particles: "stars",
+    },
+    winter: {
+      keywords: ["winter", "snow", "cold", "ice", "christmas", "frost", "chill"],
+      colors: ["#83a4d4", "#b6fbff", "#1c2b4a"],
+      particles: "snow",
+    },
+    sunset: {
+      keywords: ["sunset", "sunrise", "evening", "warm", "golden hour", "dusk", "horizon"],
+      colors: ["#ff7e5f", "#feb47b", "#4a1942"],
+      particles: "none",
+    },
+    energy: {
+      keywords: ["energy", "power", "sport", "workout", "gym", "fast", "run", "action"],
+      colors: ["#f857a6", "#ff5858", "#1a0033"],
+      particles: "bolts",
+    },
+    calm: {
+      keywords: ["calm", "peace", "relax", "meditation", "yoga", "quiet", "soft", "gentle"],
+      colors: ["#a8edea", "#fed6e3", "#5f7a8a"],
+      particles: "none",
+    },
+    corporate: {
+      keywords: ["business", "corporate", "office", "meeting", "work", "professional", "finance", "startup"],
+      colors: ["#0f2027", "#203a43", "#2c5364"],
+      particles: "none",
+    },
+  };
+  const AUTO_THEME_DEFAULT_KEY = "night";
+  const AUTO_THEME_KEYS = Object.keys(AUTO_THEMES);
+
+  /** Pick the best-matching theme for a block of text via simple keyword scan. */
+  function detectThemeForText(text) {
+    const lower = (text || "").toLowerCase();
+    let best = null;
+    let bestScore = 0;
+    for (const key of AUTO_THEME_KEYS) {
+      const theme = AUTO_THEMES[key];
+      let score = 0;
+      for (const kw of theme.keywords) {
+        if (lower.includes(kw)) score++;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = key;
+      }
+    }
+    return best || AUTO_THEME_DEFAULT_KEY;
+  }
+
+  function themeLabel(key) {
+    return key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " ");
+  }
+
+  /** Draw a procedurally-generated animated theme background (no images/AI). */
+  function drawAutoThemeBackground(c, themeKey, progress, w, h) {
+    const theme = AUTO_THEMES[themeKey] || AUTO_THEMES[AUTO_THEME_DEFAULT_KEY];
+    const [c1, c2, c3] = theme.colors;
+    const angle = progress * Math.PI * 2;
+    const gx = w / 2 + Math.cos(angle) * w * 0.3;
+    const gy = h / 2 + Math.sin(angle) * h * 0.3;
+    const grad = c.createRadialGradient(gx, gy, 0, w / 2, h / 2, Math.hypot(w, h) * 0.75);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(0.55, c2);
+    grad.addColorStop(1, c3);
+    c.fillStyle = grad;
+    c.fillRect(0, 0, w, h);
+    drawThemeParticles(c, theme.particles, progress, w, h);
+  }
+
+  function drawThemeParticles(c, type, progress, w, h) {
+    if (!type || type === "none") return;
+    const count = 46;
+    c.save();
+    for (let i = 0; i < count; i++) {
+      const seed = i * 97.13;
+      const rx = hashRand(seed);
+      const ry = hashRand(seed + 5.7);
+      const speed = 0.15 + hashRand(seed + 1.3) * 0.6;
+      const size = 1.5 + hashRand(seed + 2.9) * 3.5;
+      let x, y, alpha, fill;
+
+      switch (type) {
+        case "stars": {
+          x = rx * w;
+          y = ry * h;
+          alpha = 0.4 + 0.6 * Math.abs(Math.sin(progress * Math.PI * 2 * (0.5 + speed) + seed));
+          fill = "rgba(255,255,255," + alpha + ")";
+          c.fillStyle = fill;
+          c.beginPath();
+          c.arc(x, y, size * 0.6, 0, Math.PI * 2);
+          c.fill();
+          break;
+        }
+        case "snow":
+        case "rain": {
+          const fall = type === "rain" ? 1.6 : 0.35;
+          y = ((ry + progress * fall + hashRand(seed + 9)) % 1) * h;
+          x = rx * w + (type === "rain" ? -20 * ((ry + progress * fall) % 1) : 0);
+          c.strokeStyle = type === "rain" ? "rgba(180,210,255,0.5)" : "rgba(255,255,255,0.85)";
+          c.lineWidth = type === "rain" ? 1.5 : 0;
+          if (type === "rain") {
+            c.beginPath();
+            c.moveTo(x, y);
+            c.lineTo(x - 6, y + 16);
+            c.stroke();
+          } else {
+            c.fillStyle = "rgba(255,255,255,0.85)";
+            c.beginPath();
+            c.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            c.fill();
+          }
+          break;
+        }
+        case "embers":
+        case "sparkle":
+        case "bolts": {
+          y = h - ((ry + progress * speed) % 1) * h;
+          x = rx * w + Math.sin(progress * Math.PI * 2 + seed) * 12;
+          const col =
+            type === "embers"
+              ? "255,150,60"
+              : type === "sparkle"
+              ? "255,230,150"
+              : "255,80,180";
+          alpha = 1 - ((ry + progress * speed) % 1);
+          c.fillStyle = `rgba(${col},${clamp01(alpha)})`;
+          c.beginPath();
+          c.arc(x, y, size * 0.6, 0, Math.PI * 2);
+          c.fill();
+          break;
+        }
+        case "bubbles": {
+          y = h - ((ry + progress * speed) % 1) * h;
+          x = rx * w + Math.sin(progress * Math.PI * 4 + seed) * 8;
+          c.strokeStyle = "rgba(220,245,255,0.5)";
+          c.lineWidth = 1;
+          c.beginPath();
+          c.arc(x, y, size, 0, Math.PI * 2);
+          c.stroke();
+          break;
+        }
+        case "leaves": {
+          y = ((ry + progress * 0.4) % 1) * h;
+          x = rx * w + Math.sin(progress * Math.PI * 2 + seed) * 20;
+          c.save();
+          c.translate(x, y);
+          c.rotate(progress * Math.PI * 2 + seed);
+          c.fillStyle = "rgba(160,220,140,0.6)";
+          c.beginPath();
+          c.ellipse(0, 0, size * 1.4, size * 0.7, 0, 0, Math.PI * 2);
+          c.fill();
+          c.restore();
+          break;
+        }
+        case "confetti": {
+          y = ((ry + progress * 0.5) % 1) * h;
+          x = rx * w + Math.sin(progress * Math.PI * 3 + seed) * 16;
+          const hue = Math.floor(hashRand(seed + 4) * 360);
+          c.save();
+          c.translate(x, y);
+          c.rotate(progress * Math.PI * 4 + seed);
+          c.fillStyle = `hsla(${hue},85%,65%,0.85)`;
+          c.fillRect(-size / 2, -size / 4, size, size / 2);
+          c.restore();
+          break;
+        }
+        case "hearts": {
+          y = h - ((ry + progress * 0.3) % 1) * h;
+          x = rx * w + Math.sin(progress * Math.PI * 2 + seed) * 10;
+          c.save();
+          c.translate(x, y);
+          c.scale(size / 4, size / 4);
+          c.fillStyle = "rgba(255,140,170,0.7)";
+          c.beginPath();
+          c.moveTo(0, 1.2);
+          c.bezierCurveTo(-3, -1.5, -1.2, -3, 0, -0.8);
+          c.bezierCurveTo(1.2, -3, 3, -1.5, 0, 1.2);
+          c.fill();
+          c.restore();
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    c.restore();
+  }
+
   // ---------- State ----------
   let mode = "image"; // 'image' | 'text'
   let idCounter = 0;
@@ -193,7 +431,7 @@
   /** @type {Array<{id:number,img:HTMLImageElement,url:string,duration:number,zoomDir:string,p0x:number,p1x:number,p0y:number,p1y:number}>} */
   let imageSlides = [];
 
-  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number}>} */
+  /** @type {Array<{id:number,text:string,bg:string,color:string,duration:number,fontSize:number,bgMode:string,bgImageEl:?HTMLImageElement,bgVideoEl:?HTMLVideoElement,bgFileName:?string,dimBackground:boolean}>} */
   let textSlides = [
     {
       id: nextId(),
@@ -202,6 +440,11 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 56,
+      bgMode: "color", // 'color' | 'auto' | 'custom-image' | 'custom-video'
+      bgImageEl: null,
+      bgVideoEl: null,
+      bgFileName: null,
+      dimBackground: true,
     },
   ];
 
@@ -385,6 +628,11 @@
       color: "#ffffff",
       duration: 3,
       fontSize: 48,
+      bgMode: "color",
+      bgImageEl: null,
+      bgVideoEl: null,
+      bgFileName: null,
+      dimBackground: true,
     });
     renderTextSlideList();
     renderCurrentModePreviewFrame();
@@ -406,16 +654,66 @@
           <button class="remove-slide" data-id="${slide.id}">✕ remove</button>
         </div>
         <textarea data-id="${slide.id}" class="text-input" placeholder="Slide text...">${escapeHtml(slide.text)}</textarea>
-        <div class="row" style="margin-top:8px;">
-          <div class="field" style="margin-bottom:0;">
-            <label style="font-size:12px;">Background</label>
-            <input type="color" data-id="${slide.id}" class="bg-input" value="${slide.bg}" />
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label style="font-size:12px;">Text color</label>
-            <input type="color" data-id="${slide.id}" class="color-input" value="${slide.color}" />
-          </div>
+
+        <div class="field" style="margin:10px 0 0;">
+          <label style="font-size:12px;">Background</label>
+          <select data-id="${slide.id}" class="bgmode-input" style="width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:6px;">
+            <option value="color"${slide.bgMode === "color" ? " selected" : ""}>🎨 Solid color</option>
+            <option value="auto"${slide.bgMode === "auto" ? " selected" : ""}>✨ Automatic (matches your text)</option>
+            <option value="custom-image"${slide.bgMode === "custom-image" ? " selected" : ""}>🖼️ Custom image (upload)</option>
+            <option value="custom-video"${slide.bgMode === "custom-video" ? " selected" : ""}>🎬 Custom video (upload)</option>
+          </select>
         </div>
+
+        ${
+          slide.bgMode === "color"
+            ? `<div class="row" style="margin-top:8px;">
+                 <div class="field" style="margin-bottom:0;">
+                   <label style="font-size:12px;">Background color</label>
+                   <input type="color" data-id="${slide.id}" class="bg-input" value="${slide.bg}" />
+                 </div>
+                 <div class="field" style="margin-bottom:0;">
+                   <label style="font-size:12px;">Text color</label>
+                   <input type="color" data-id="${slide.id}" class="color-input" value="${slide.color}" />
+                 </div>
+               </div>`
+            : ""
+        }
+
+        ${
+          slide.bgMode === "auto"
+            ? `<div class="hint auto-theme-hint" style="margin-top:6px;">
+                 Detected theme: <strong>${themeLabel(detectThemeForText(slide.text))}</strong> —
+                 changes automatically as you edit the text above.
+               </div>
+               <div class="field" style="margin-top:6px;margin-bottom:0;">
+                 <label style="font-size:12px;">Text color</label>
+                 <input type="color" data-id="${slide.id}" class="color-input" value="${slide.color}" />
+               </div>`
+            : ""
+        }
+
+        ${
+          slide.bgMode === "custom-image" || slide.bgMode === "custom-video"
+            ? `<div class="field" style="margin-top:6px;margin-bottom:0;">
+                 <label style="font-size:12px;color:var(--text-dim);">
+                   Upload ${slide.bgMode === "custom-image" ? "an image" : "a video"}
+                 </label>
+                 <input type="file" data-id="${slide.id}" class="bgfile-input"
+                   accept="${slide.bgMode === "custom-image" ? "image/*" : "video/*"}" />
+                 <div class="hint">${slide.bgFileName ? "Current file: " + escapeHtml(slide.bgFileName) : "No file uploaded yet."}</div>
+               </div>
+               <div class="field" style="margin-top:6px;margin-bottom:0;">
+                 <label style="font-size:12px;">Text color</label>
+                 <input type="color" data-id="${slide.id}" class="color-input" value="${slide.color}" />
+               </div>
+               <label style="font-size:12px;color:var(--text-dim);display:flex;gap:6px;align-items:center;margin-top:6px;">
+                 <input type="checkbox" data-id="${slide.id}" class="dim-input" ${slide.dimBackground ? "checked" : ""} style="width:auto;" />
+                 Darken background so text stays readable
+               </label>`
+            : ""
+        }
+
         <div class="row" style="margin-top:8px;">
           <div class="field" style="margin-bottom:0;">
             <label style="font-size:12px;">Font size (px)</label>
@@ -448,7 +746,63 @@
     textSlideListEl.querySelectorAll(".text-input").forEach((inp) =>
       inp.addEventListener("input", () => {
         const slide = textSlides.find((s) => s.id === Number(inp.dataset.id));
-        if (slide) slide.text = inp.value;
+        if (slide) {
+          slide.text = inp.value;
+          if (slide.bgMode === "auto") {
+            // Re-render just the detected-theme hint label without losing
+            // textarea focus/caret: update the hint text node directly.
+            const item = inp.closest(".slide-item");
+            const hintEl = item && item.querySelector(".auto-theme-hint");
+            if (hintEl) {
+              hintEl.innerHTML = `Detected theme: <strong>${themeLabel(
+                detectThemeForText(slide.text)
+              )}</strong> — changes automatically as you edit the text above.`;
+            }
+          }
+        }
+        renderCurrentModePreviewFrame();
+      })
+    );
+    textSlideListEl.querySelectorAll(".bgmode-input").forEach((sel) =>
+      sel.addEventListener("change", () => {
+        const slide = textSlides.find((s) => s.id === Number(sel.dataset.id));
+        if (slide) slide.bgMode = sel.value;
+        renderTextSlideList();
+        renderCurrentModePreviewFrame();
+      })
+    );
+    textSlideListEl.querySelectorAll(".bgfile-input").forEach((inp) =>
+      inp.addEventListener("change", (e) => {
+        const slide = textSlides.find((s) => s.id === Number(inp.dataset.id));
+        if (!slide) return;
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        slide.bgFileName = file.name;
+        if (slide.bgMode === "custom-image") {
+          const img = new Image();
+          img.onload = () => renderCurrentModePreviewFrame();
+          img.src = url;
+          slide.bgImageEl = img;
+          slide.bgVideoEl = null;
+        } else {
+          const vid = document.createElement("video");
+          vid.src = url;
+          vid.muted = true;
+          vid.loop = true;
+          vid.playsInline = true;
+          vid.autoplay = false;
+          slide.bgVideoEl = vid;
+          slide.bgImageEl = null;
+        }
+        renderTextSlideList();
+        renderCurrentModePreviewFrame();
+      })
+    );
+    textSlideListEl.querySelectorAll(".dim-input").forEach((inp) =>
+      inp.addEventListener("change", () => {
+        const slide = textSlides.find((s) => s.id === Number(inp.dataset.id));
+        if (slide) slide.dimBackground = inp.checked;
         renderCurrentModePreviewFrame();
       })
     );
@@ -602,9 +956,87 @@
     return lines;
   }
 
-  function drawTextSlideContent(c, slide, progress, w, h) {
+  /** Draw a custom-uploaded image, cover-fitted (crop to fill) the frame. */
+  function drawCoverImage(c, imgEl, w, h) {
+    if (!imgEl || !imgEl.complete || !imgEl.naturalWidth) return false;
+    const iw = imgEl.naturalWidth,
+      ih = imgEl.naturalHeight;
+    const canvasAspect = w / h;
+    let cropW, cropH;
+    if (iw / ih > canvasAspect) {
+      cropH = ih;
+      cropW = ih * canvasAspect;
+    } else {
+      cropW = iw;
+      cropH = iw / canvasAspect;
+    }
+    const sx = (iw - cropW) / 2,
+      sy = (ih - cropH) / 2;
+    c.drawImage(imgEl, sx, sy, cropW, cropH, 0, 0, w, h);
+    return true;
+  }
+
+  /** Draw a custom-uploaded video's current frame, cover-fitted. */
+  function drawCoverVideo(c, videoEl, w, h) {
+    if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) return false;
+    const iw = videoEl.videoWidth,
+      ih = videoEl.videoHeight;
+    const canvasAspect = w / h;
+    let cropW, cropH;
+    if (iw / ih > canvasAspect) {
+      cropH = ih;
+      cropW = ih * canvasAspect;
+    } else {
+      cropW = iw;
+      cropH = iw / canvasAspect;
+    }
+    const sx = (iw - cropW) / 2,
+      sy = (ih - cropH) / 2;
+    c.drawImage(videoEl, sx, sy, cropW, cropH, 0, 0, w, h);
+    return true;
+  }
+
+  function drawTextSlideBackground(c, slide, progress, w, h) {
+    if (slide.bgMode === "auto") {
+      const theme = detectThemeForText(slide.text);
+      drawAutoThemeBackground(c, theme, progress, w, h);
+      return;
+    }
+    if (slide.bgMode === "custom-image") {
+      const ok = drawCoverImage(c, slide.bgImageEl, w, h);
+      if (!ok) {
+        c.fillStyle = "#222";
+        c.fillRect(0, 0, w, h);
+      }
+      if (slide.dimBackground) {
+        c.save();
+        c.fillStyle = "rgba(0,0,0,0.45)";
+        c.fillRect(0, 0, w, h);
+        c.restore();
+      }
+      return;
+    }
+    if (slide.bgMode === "custom-video") {
+      const ok = drawCoverVideo(c, slide.bgVideoEl, w, h);
+      if (!ok) {
+        c.fillStyle = "#222";
+        c.fillRect(0, 0, w, h);
+      }
+      if (slide.dimBackground) {
+        c.save();
+        c.fillStyle = "rgba(0,0,0,0.45)";
+        c.fillRect(0, 0, w, h);
+        c.restore();
+      }
+      return;
+    }
+    // Default: solid color background.
     c.fillStyle = slide.bg || "#222";
     c.fillRect(0, 0, w, h);
+  }
+
+  function drawTextSlideContent(c, slide, progress, w, h) {
+    drawTextSlideBackground(c, slide, progress, w, h);
 
     const fadeIn = Math.min(1, progress / 0.18);
     const liftY = (1 - fadeIn) * 18;
@@ -1440,6 +1872,29 @@
     }
   }
 
+  /**
+   * Ensure background <video> elements are playing only while their slide
+   * is the active (or about-to-be-active, during a transition) one, so the
+   * frame drawn into the canvas matches real elapsed time. Videos not in
+   * use are paused to avoid wasting CPU.
+   */
+  function syncBackgroundVideos(timeline, activeIdx) {
+    if (mode !== "text") return;
+    timeline.forEach((seg, i) => {
+      const slide = seg.slide;
+      if (slide.bgMode !== "custom-video" || !slide.bgVideoEl) return;
+      const shouldPlay = i === activeIdx || i === activeIdx + 1;
+      if (shouldPlay) {
+        if (slide.bgVideoEl.paused) {
+          slide.bgVideoEl.currentTime = 0;
+          slide.bgVideoEl.play().catch(() => {});
+        }
+      } else if (!slide.bgVideoEl.paused) {
+        slide.bgVideoEl.pause();
+      }
+    });
+  }
+
   function renderAt(c, timeline, total, t, w, h, transitionDuration) {
     c.clearRect(0, 0, w, h);
     if (timeline.length === 0) {
@@ -1454,6 +1909,8 @@
     const segDur = seg.end - seg.start;
     const localT = segDur > 0 ? (tt - seg.start) / segDur : 1;
     const curProgress = Math.min(Math.max(localT, 0), 1);
+
+    syncBackgroundVideos(timeline, idx);
 
     const nextSeg = timeline[idx + 1];
     // Fully automatic: the transition used is determined purely by this
@@ -1529,6 +1986,15 @@
       } catch (e) {}
       activeAudioCtx = null;
     }
+    // Pause any custom background videos so they don't keep playing/using
+    // CPU in the background after preview/recording stops.
+    textSlides.forEach((s) => {
+      if (s.bgVideoEl && !s.bgVideoEl.paused) {
+        try {
+          s.bgVideoEl.pause();
+        } catch (e) {}
+      }
+    });
     playPreviewBtn.disabled = false;
     recordBtn.disabled = false;
     stopBtn.disabled = true;
